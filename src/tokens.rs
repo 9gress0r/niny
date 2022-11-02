@@ -1,4 +1,5 @@
 use std::fmt::{Display, Error, Formatter};
+
 use regex::Regex;
 
 macro_rules! pair {
@@ -10,7 +11,7 @@ macro_rules! pair {
   };
 }
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone)]
 pub enum Tokens {
   // Literals
   IntegerLiteral,
@@ -25,13 +26,34 @@ pub enum Tokens {
   Comment
 }
 
+impl Display for Tokens {
+  fn fmt(
+    &self,
+    f: &mut Formatter
+  ) -> Result<(), Error> {
+    use Tokens::*;
+    let token = match *self {
+      IntegerLiteral => "IntegerLiteral",
+      FloatLiteral => "FloatLiteral",
+      StringLiteral => "StringLiteral",
+      CharLiteral => "CharLiteral",
+      Identifier => "Identifier",
+      Operator => "Operator",
+      Separator => "Separator",
+      Keyword => "Keyword",
+      Comment => "Comment"
+    };
+
+    write!(f, "{}", token)
+  }
+}
+
 #[derive(Copy, Clone)]
 pub struct Pair<A, B> {
   pub first:  A,
   pub second: B
 }
 
-#[derive(Debug)]
 pub struct Token {
   pub kind:    Tokens,
   pub content: String
@@ -54,7 +76,12 @@ impl Display for Token {
     &self,
     f: &mut Formatter
   ) -> Result<(), Error> {
-    write!(f, "{:?} => {}", self.kind, self.content)
+    write!(
+      f,
+      r"Token '{}' of type `{}`",
+      self.content.replace("\n", "\\n"),
+      self.kind
+    )
   }
 }
 
@@ -105,6 +132,11 @@ impl Tokenizer {
         // Check if the match is already in the ranges
         // If it is, then we don't need to add it
         // If it isn't, then we add it and add the token
+
+        // Ignore if len is 0
+        if m.end() - m.start() == 0 {
+          continue
+        }
 
         let mut found = false;
         for range in ranges.iter() {
