@@ -1,4 +1,6 @@
 use std::fmt::{Display, Error, Formatter};
+use std::io::{BufReader, BufRead};
+use std::fs::File;
 
 use regex::Regex;
 
@@ -11,7 +13,7 @@ macro_rules! pair {
   };
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Eq, PartialEq)]
 pub enum Tokens {
   // Literals
   IntegerLiteral,
@@ -56,19 +58,9 @@ pub struct Pair<A, B> {
 
 pub struct Token {
   pub kind:    Tokens,
-  pub content: String
-}
-
-impl Token {
-  pub fn new(
-    kind: Tokens,
-    content: String
-  ) -> Self {
-    Token {
-      kind,
-      content
-    }
-  }
+  pub content: String,
+  pub line:    usize,
+  pub column:  usize
 }
 
 impl Display for Token {
@@ -85,13 +77,18 @@ impl Display for Token {
   }
 }
 
+pub enum ContentType {
+  File(String), // Path
+  String(String)
+}
+
 pub struct Tokenizer {
   token_map: Vec<Pair<&'static str, Tokens>>,
-  content:   String
+  content:   ContentType
 }
 
 impl Tokenizer {
-  pub fn new(content: String) -> Tokenizer {
+  pub fn new(content: ContentType) -> Tokenizer {
     use Tokens::*;
     Tokenizer {
       content,
@@ -121,38 +118,79 @@ impl Tokenizer {
     }
   }
 
-  pub fn tokenize(&self) -> Vec<Token> {
+  fn tokenize_string(&self, content: String) -> Vec<Token> {
     let mut tokens: Vec<Token> = Vec::new();
     let mut ranges: Vec<Pair<usize, usize>> = Vec::new();
 
     for pair in self.token_map.iter() {
-      let (regex, token) = (pair.first, pair.second);
+      let (regex, token_type) = (pair.first, pair.second);
 
-      for m in Regex::new(regex).unwrap().find_iter(&self.content) {
+      for m in Regex::new(regex).unwrap().find_iter(&content[..]) {
         // Check if the match is already in the ranges
         // If it is, then we don't need to add it
-        // If it isn't, then we add it and add the token
+        // If it isn't, then we add it and add the token_type
+
+        let (start, end) = (m.start(), m.end());
 
         // Ignore if len is 0
-        if m.end() - m.start() == 0 {
+        if end - start == 0 {
           continue
         }
 
         let mut found = false;
         for range in ranges.iter() {
-          if m.start() >= range.first && m.end() <= range.second {
+          if start >= range.first && end <= range.second {
             found = true;
             break
           }
         }
 
         if !found {
-          tokens.push(Token::new(token, m.as_str().to_string()));
+          if token_type != Tokens::Comment {
+            tokens.push(Token {
+              kind:    token_type,
+              content: m.as_str().to_string(),
+              line: 0, // This field will be filled later, in the `tokenize_file` function
+              column: start
+            });
+          }
           ranges.push(pair!(m.start() => m.end()));
         }
       }
     }
 
     return tokens
+  }
+
+  fn tokenize_file(&self, filepath: &str) -> Vec<Token> {
+    let mut tokens: Vec<Token> = Vec::new();
+    let mut line_num: usize = 1;
+
+    let file = 
+      match File::open(filepath) {
+        Ok(file) => file,
+        Err(error) => panic!("{}", error)
+      };
+
+    let lines = BufReader::new(file).lines();
+
+    for line in lines {
+      let mut line_tokens = self.tokenize_string(line.unwrap());
+      for token in line_tokens.iter_mut() {
+        token.line = line_num;
+      }
+
+      tokens.append(&mut line_tokens);
+      line_num += 1;
+    }
+
+    return tokens
+  }
+
+  pub fn tokenize(&self) -> Vec<Token> {
+    return match self.content {
+      ContentType::File(ref file) => self.tokenize_file(file),
+      ContentType::String(ref string) => self.tokenize_string(string.to_string())
+    }
   }
 }
