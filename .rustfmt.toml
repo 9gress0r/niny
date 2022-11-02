@@ -1,0 +1,12 @@
+fn_args_layout = "Vertical"
+fn_single_line = true
+format_strings = true
+match_block_trailing_comma = true
+reorder_impl_items = true
+group_imports = "StdExternalCrate"
+struct_field_align_threshold = 20
+struct_lit_single_line = false
+tab_spaces = 2
+trailing_comma = "Never"
+trailing_semicolon = false
+use_field_init_shorthand = true
