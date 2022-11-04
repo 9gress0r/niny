@@ -25,7 +25,8 @@ pub enum Tokens {
   Operator,
   Separator,
   Keyword,
-  Comment
+  Comment,
+  EOL
 }
 
 impl Display for Tokens {
@@ -43,7 +44,8 @@ impl Display for Tokens {
       Operator => "Operator",
       Separator => "Separator",
       Keyword => "Keyword",
-      Comment => "Comment"
+      Comment => "Comment",
+      EOL => "EOL"
     };
 
     write!(f, "{}", token)
@@ -84,7 +86,8 @@ pub enum ContentType {
 
 pub struct Tokenizer {
   token_map: Vec<Pair<&'static str, Tokens>>,
-  content:   ContentType
+  content:   ContentType,
+  pub stream: Vec<Token>
 }
 
 impl Tokenizer {
@@ -92,6 +95,7 @@ impl Tokenizer {
     use Tokens::*;
     Tokenizer {
       content,
+      stream: Vec::new(),
       token_map: vec![
         pair!(r"\$.*" => Comment),
         // Literals
@@ -159,6 +163,13 @@ impl Tokenizer {
       }
     }
 
+    tokens.push(Token {
+      kind:    Tokens::EOL,
+      content: "".to_string(),
+      line: 0,
+      column: 0
+    });
+
     return tokens
   }
 
@@ -187,10 +198,11 @@ impl Tokenizer {
     return tokens
   }
 
-  pub fn tokenize(&self) -> Vec<Token> {
-    return match self.content {
-      ContentType::File(ref file) => self.tokenize_file(file),
-      ContentType::String(ref string) => self.tokenize_string(string.to_string())
-    }
+  pub fn tokenize(&mut self) {
+    self.stream =
+      match self.content {
+        ContentType::File(ref file) => self.tokenize_file(file),
+        ContentType::String(ref string) => self.tokenize_string(string.to_string())
+      }
   }
 }
