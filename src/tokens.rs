@@ -123,8 +123,7 @@ impl Tokenizer {
   }
 
   fn tokenize_string(&self, content: String) -> Vec<Token> {
-    let mut tokens: Vec<Token> = Vec::new();
-    let mut ranges: Vec<Pair<usize, usize>> = Vec::new();
+    let mut ranges: Vec<Pair<Pair<usize, usize>, Tokens>> = Vec::new();
 
     for pair in self.token_map.iter() {
       let (regex, token_type) = (pair.first, pair.second);
@@ -142,7 +141,8 @@ impl Tokenizer {
         }
 
         let mut found = false;
-        for range in ranges.iter() {
+        for range_token_pair in ranges.iter() {
+          let (range, _) = (range_token_pair.first, range_token_pair.second);
           if start >= range.first && end <= range.second {
             found = true;
             break
@@ -151,23 +151,37 @@ impl Tokenizer {
 
         if !found {
           if token_type != Tokens::Comment {
-            tokens.push(Token {
-              kind:    token_type,
-              content: m.as_str().to_string(),
-              line: 0, // This field will be filled later, in the `tokenize_file` function
-              column: start
-            });
+            ranges.push(pair!(pair!(start => end) => token_type))
           }
-          ranges.push(pair!(m.start() => m.end()));
         }
       }
     }
 
+    // Sort the ranges
+    ranges.sort_by(|a, b| a.first.first.cmp(&b.first.first));
+
+    // Create the tokens
+    let mut tokens: Vec<Token> = Vec::new();
+
+    for range_token_pair in ranges.iter() {
+      let (range, token_type) = (range_token_pair.first, range_token_pair.second);
+      let (start, end) = (range.first, range.second);
+
+      let token = Token {
+        kind:    token_type,
+        content: content[start..end].to_string(),
+        line:    0,
+        column:  start
+      };
+
+      tokens.push(token)
+    }
+
     tokens.push(Token {
       kind:    Tokens::EOL,
-      content: "".to_string(),
-      line: 0,
-      column: 0
+      content: "\n".to_string(),
+      line:    0,
+      column: content.len()
     });
 
     return tokens
