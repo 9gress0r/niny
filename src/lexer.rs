@@ -1,6 +1,6 @@
 use std::fmt::{Display, Error, Formatter};
-use std::io::{BufReader, BufRead};
 use std::fs::File;
+use std::io::{BufRead, BufReader};
 
 use regex::Regex;
 
@@ -58,6 +58,7 @@ pub struct Pair<A, B> {
   pub second: B
 }
 
+#[derive(Clone)]
 pub struct Token {
   pub kind:    Tokens,
   pub content: String,
@@ -85,9 +86,9 @@ pub enum ContentType {
 }
 
 pub struct Tokenizer {
-  token_map: Vec<Pair<&'static str, Tokens>>,
-  content:   ContentType,
-  pub stream: Vec<Token>
+  token_map:  Vec<Pair<&'static str, Tokens>>,
+  content:    ContentType,
+  pub stream: Vec<Token>,
 }
 
 impl Tokenizer {
@@ -122,7 +123,10 @@ impl Tokenizer {
     }
   }
 
-  fn tokenize_string(&self, content: String) -> Vec<Token> {
+  fn tokenize_string(
+    &self,
+    content: String
+  ) -> Vec<Token> {
     let mut ranges: Vec<Pair<Pair<usize, usize>, Tokens>> = Vec::new();
 
     for pair in self.token_map.iter() {
@@ -181,21 +185,23 @@ impl Tokenizer {
       kind:    Tokens::EOL,
       content: "\n".to_string(),
       line:    0,
-      column: content.len()
+      column:  content.len()
     });
 
     return tokens
   }
 
-  fn tokenize_file(&self, filepath: &str) -> Vec<Token> {
+  fn tokenize_file(
+    &self,
+    filepath: &str
+  ) -> Vec<Token> {
     let mut tokens: Vec<Token> = Vec::new();
     let mut line_num: usize = 1;
 
-    let file = 
-      match File::open(filepath) {
-        Ok(file) => file,
-        Err(error) => panic!("{}", error)
-      };
+    let file = match File::open(filepath) {
+      Ok(file) => file,
+      Err(error) => panic!("{}", error)
+    };
 
     let lines = BufReader::new(file).lines();
 
@@ -213,10 +219,9 @@ impl Tokenizer {
   }
 
   pub fn tokenize(&mut self) {
-    self.stream =
-      match self.content {
-        ContentType::File(ref file) => self.tokenize_file(file),
-        ContentType::String(ref string) => self.tokenize_string(string.to_string())
-      }
+    self.stream = match self.content {
+      ContentType::File(ref file) => self.tokenize_file(file),
+      ContentType::String(ref string) => self.tokenize_string(string.to_string())
+    }
   }
 }
