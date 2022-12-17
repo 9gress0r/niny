@@ -1,5 +1,6 @@
-# Functions for basic commands
+from globals import *
 
+# Functions for basic commands
 def full(line, index):
     """ Command for printing current stack condition """
     global stacks

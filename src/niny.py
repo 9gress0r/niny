@@ -5,6 +5,9 @@ sys.setrecursionlimit(10 ** 8)
 """ All functions for checking stack conditions """
 import methods as meths
 
+""" Global variables for the project. """
+from globals import *
+
 commands = {
     # Basic commands for working with stack
     "full": meths.full, # @params: index
@@ -143,11 +146,12 @@ def runMacro(name, line):
 
 def execLine(line, index):
     """ Main line computing func """
-    command_name = line.strip().split(
-        ' ')[0]  # Getting main command through extra spaces
+    command_name = line.strip().split(' ')[0]  # Getting main command through extra spaces
+
+    global debug
 
     if command_name in commands:
-        eval(commands[command_name])
+        commands[command_name](line, index, debug)
     elif command_name in macros:
         runMacro(command_name, line)
     else:
@@ -162,18 +166,10 @@ def main(path):
         usage()
 
     global document, stacks, macros  # Some basic structures
-
-    document = open(path).readlines()
-    stacks = {"main": []}
-    macros = {}  # Pattern - {"macro_name": (header_index, end_index)}
-
     global current_stack
-    current_stack = "main"
-
-    # Reading the file
     global line_index
 
-    line_index = 0
+    document = open(path).readlines()
 
     while line_index < len(document):
         line = ignoreComments(document[line_index])
@@ -198,10 +194,7 @@ if __name__ == "__main__":
     args.pop(0)  # Removing python file
 
     global debug
-    debug = False  # Debug mode
-
     global ignoreDebugMessage
-    ignoreDebugMessage = False  # Mode for ignoring debug startup message
 
     # Going through the launch arguments
     index = 0
