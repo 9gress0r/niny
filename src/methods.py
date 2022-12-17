@@ -774,31 +774,6 @@ def createMacro(line, index):
     if debug:
         print(macros)
 
-
-def runMacro(name, line):
-    global debug
-    global macros, document
-
-    if debug:
-        print(f"Running macro {name}")
-
-    if name not in macros:
-        errorWithLine("Undefined macro", line, index)
-
-    start_index, stop_index = macros[name]
-
-    while start_index <= stop_index:
-        m_line = ignoreComments(document[start_index])
-
-        if len(m_line.strip()) != 0:
-            execLine(m_line, start_index)
-
-        start_index += 1
-
-    if debug:
-        full(index)
-
-
 def deleteMacro(line, index):
     global debug
     global macros
