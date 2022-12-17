@@ -661,19 +661,6 @@ def getIndex(line, index):
 
     del line_copy
 
-
-def flatten(array):
-    result = []
-
-    for item in array:
-        if type(item) == list:
-            result.extend(flatten(item))
-        else:
-            result.append(item)
-
-    return result
-
-
 def flatList(line, index):
     checkStack(1, line, index)
 

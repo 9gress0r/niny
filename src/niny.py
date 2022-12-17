@@ -78,6 +78,16 @@ def debugMode():
 
     debug = True
 
+def flatten(array):
+    result = []
+
+    for item in array:
+        if type(item) == list:
+            result.extend(flatten(item))
+        else:
+            result.append(item)
+
+    return result
 
 def ignoreDebugMessages():
     global ignoreDebugMessage
