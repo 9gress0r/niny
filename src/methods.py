@@ -1,6 +1,6 @@
 # Functions for basic commands
 
-def full(index):
+def full(line, index):
     """ Command for printing current stack condition """
     global stacks
     global debug
@@ -137,7 +137,7 @@ def changePlaces(line, index):
 
     del line_copy
 
-def reverseStack(index):
+def reverseStack(line, index):
     global stacks
     global debug
     global current_stack
@@ -147,7 +147,7 @@ def reverseStack(index):
     if debug:
         full(index)
 
-def stackLength():
+def stackLength(line, index):
     global stacks
     global debug
     global current_stack
