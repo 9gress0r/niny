@@ -1,4 +1,5 @@
-from globals import *
+from globals import ignoreDebugMessage, debug, stacks, current_stack, document, line_index, macros
+from utils import *
 
 # Functions for basic commands
 def full(line, index):
